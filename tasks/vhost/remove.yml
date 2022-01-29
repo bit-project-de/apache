@@ -1,0 +1,11 @@
+---
+
+- name: Remove httpd vhost config for {{ vhost.servername }}
+  file:
+    path: /etc/httpd/conf.d/{{ vhost.servername }}.conf
+    state: absent
+  notify: Restart httpd
+
+- name:  Disable httpd vhost config for {{ vhost.servername }}
+  command: "a2dissite {{ vhost.servername }}"
+  notify: Restart httpd

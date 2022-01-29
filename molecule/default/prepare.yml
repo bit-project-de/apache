@@ -1,0 +1,7 @@
+---
+
+- name: Prepare for ansible
+  hosts: all
+  gather_facts: false
+  roles:
+    - ansible-bootstrap

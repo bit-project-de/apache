@@ -1,0 +1,88 @@
+---
+- name: print the distribution and version
+  debug: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+- name: Install apache httpd  (state=present is optional)
+  apt:
+    name: apache2
+    state: present
+
+- name: Disable default configuration
+  file:
+    name: "/etc/apache2/sites-enabled/000-default.conf"
+    state: absent
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart httpd
+
+# - name: Enable modules via symlinks
+#   file:
+#     src: "/etc/apache2/mods-available/{{ item.file }}"
+#     dest: "/etc/apache2/mods-enabled/{{ item.file }}"
+#     state: item.state
+#   with_items: "{{ httpd_modules }}"
+#   notify: Restart httpd
+
+- name: Explicitly disable modules via apache2-script
+  with_items: "{{ httpd_modules }}"
+  command: "a2dismod {{ item.name }}"
+  when: item.state == 'absent'
+
+- name: Explicitly enable modules via apache2-script
+  with_items: "{{ httpd_modules }}"
+  command: "a2enmod {{ item.name }}"
+  when: item.state == 'present'
+  notify: Restart httpd
+
+- name: Configure httpd custom ports
+  template:
+    src: ports.conf
+    dest: /etc/apache2/ports.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart httpd
+
+- name: Configure httpd
+  template:
+    src: apache2.conf
+    dest: /etc/apache2/apache2.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart httpd
+
+- name: Remove absent vhosts
+  include_tasks: vhost/remove.yml
+  with_items: "{{ httpd_vhosts_absent }}"
+  loop_control:
+    loop_var: vhost
+
+- name: Configure vhosts
+  include_tasks: vhost/main.yml
+  with_items: "{{ httpd_vhosts }}"
+  loop_control:
+    loop_var: vhost
+
+- name: Ensure httpd service is enabled
+  service:
+    name: apache2
+    state: started
+    enabled: true
+
+- name: Get httpd vhost conf status
+  command: apachectl -S
+  register: _httpd_vhost_conf_status
+  changed_when: false
+
+- name: Get httpd modules status
+  command: apachectl -M
+  register: _httpd_modules_status
+  changed_when: false
+
+- name: Print httpd modules status
+  debug: msg={{ _httpd_modules_status.stdout.split('\n') }}
+
+- name: Print httpd vhost conf status
+  debug: msg={{ _httpd_vhost_conf_status.stdout.split('\n') }}

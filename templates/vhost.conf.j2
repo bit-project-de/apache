@@ -1,0 +1,126 @@
+# {{ ansible_managed }}
+
+{% if vhost.with_ssl | default(false) %}
+<VirtualHost {{ vhost.bind_host | default('*')}}:{{ vhost.http_port | default(80)}}>
+    ServerName {{ vhost.servername }}
+    DocumentRoot {{ vhost.documentroot | default('/var/www/html/') }}
+    ErrorLog /var/log/apache2/{{ vhost.servername }}_error.log
+    CustomLog /var/log/apache2/{{ vhost.servername }}_requests.log combined
+
+{% if vhost.with_http2 | default(true) %}
+    Protocols h2 h2c http/1.1
+
+{% endif %}
+
+    <Location /.well-known/>
+      Options -Indexes
+      Require all granted
+    </Location>
+
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/.well-known/*
+    RewriteRule ^(.*)$ https://{{ vhost.servername }}$1 [R=301,L]
+</VirtualHost>
+{% endif %}
+
+<VirtualHost {{ vhost.bind_host | default('*')}}:{%- if vhost.with_ssl | default(false) -%}{{ vhost.https_port | default(443) }}{%- else -%}{{ vhost.http_port | default(80)}}{%- endif -%}>
+    ServerName {{ vhost.servername }}
+    DocumentRoot {{ vhost.documentroot | default('/var/www/html/') }}
+    ErrorLog /var/log/apache2/{{ vhost.servername }}_error.log
+    CustomLog /var/log/apache2/{{ vhost.servername }}_requests.log combined
+
+{% if vhost.with_http2 | default(true) %}
+    Protocols h2 h2c http/1.1
+
+{% endif %}
+
+{% for option in vhost.options | default([]) %}
+    {{ option }}
+{% endfor %}
+
+{% if vhost.with_ssl | default(false) %}
+    SSLEngine on
+
+    # HTTP Strict Transport Security (HSTS)
+    Header always set Strict-Transport-Security "max-age=15768000"
+
+    # Secure Cookies
+    Header edit Set-Cookie ^(.*)$ $1;HttpOnly;Secure
+
+{% if vhost.with_ssl_termination | default(false) %}
+    # SSL Termination
+    RequestHeader set X-Forwarded-Proto "https"
+    RequestHeader set X-Forwarded-Port "{{ vhost.https_port | default(443) }}"
+{% endif %}
+
+    SSLProtocol {{ vhost.ssl_protocol | default(httpd_ssl_protocol) }}
+    SSLCipherSuite {{ vhost.ssl_ciphers | default(httpd_ssl_ciphers) }}
+    SSLHonorCipherOrder on
+    SSLSessionTickets off
+
+    SSLCertificateFile {{ vhost.ssl_cert_file }}
+    SSLCertificateKeyFile {{ vhost.ssl_key_file }}
+
+{% if vhost.ssl_ca_bundle_file is defined %}
+{% if ansible_distribution_major_version is version(7, '<=') %}
+    SSLCertificateChainFile {{ vhost.ssl_ca_bundle_file }}
+{% else %}
+    SSLCACertificatePath {{ vhost.ssl_ca_bundle_file }}
+{% endif %}
+{% endif %}
+{% endif %}
+
+{% for alias in vhost.aliases | default([]) %}
+    Alias {{ alias.path }} {{ alias.target }}
+{% endfor %}
+{% for directory in vhost.directories | default([]) %}
+    <Directory {{ directory.target }}>
+{% for option in directory.options | default([]) %}
+        {{ option }}
+{% endfor %}
+    </Directory>
+{% endfor %}
+
+{% for location in vhost.locations | default([]) %}
+    <Location {{ location.path }}>
+{% for option in location.options | default([]) %}
+        {{ option }}
+{% endfor %}
+    </Location>
+{% endfor %}
+
+{% for group in vhost.proxy_groups | default([]) %}
+    <Proxy balancer://{{ group.name }}>
+{% for member in group.members %}
+        BalancerMember {{ member }}
+{% endfor %}
+{% for proxyset in group.proxysets | default([]) %}
+        ProxySet {{ proxyset }}
+{% endfor %}
+    </Proxy>
+{% endfor %}
+
+{% if vhost.with_sslproxyengine | default(false) %}
+    SSLProxyEngine on
+{% endif %}
+{% for proxy_exception in vhost.proxy_pass_exception_rules | default([]) %}
+    ProxyPass {{ proxy_exception }} !
+{% endfor %}
+{% for proxy in vhost.proxy_pass_rules | default([]) %}
+    ProxyPass {{ proxy.path }}{{ '/' if proxy.path|default('')|length == 0 else '' }}  balancer://{{ proxy.group }}/ {{ proxy.option|default('') }}
+    ProxyPassReverse {{ proxy.path }}{{ '/' if proxy.path|default('')|length == 0 else '' }}  balancer://{{ proxy.group }}/
+{% endfor%}
+
+
+{% if vhost.rewrite_rules | default([]) | length > 0 %}
+    RewriteEngine On
+{% endif %}
+{% for rewrite_rule in vhost.rewrite_rules | default([]) %}
+{% for rewrite_rule_condition in rewrite_rule.conditions | default([]) %}
+    RewriteCond {{ rewrite_rule_condition }}
+{% endfor %}
+    RewriteRule {{ rewrite_rule.rule }}
+{% endfor %}
+
+
+</VirtualHost>

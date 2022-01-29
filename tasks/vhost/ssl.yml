@@ -1,0 +1,49 @@
+---
+
+- name: Set SSL facts for vhost
+  set_fact:
+    _vhost_ssl_directories:
+      - "{{ vhost.ssl_key_file | dirname }}"
+      - "{{ vhost.ssl_cert_file | dirname }}"
+
+- name: Check directories
+  stat:
+    path: "{{ item }}"
+  register: _vhost_ssl_folder_stats
+  with_items: "{{ _vhost_ssl_directories }}"
+
+- name: Create SSL directory
+  file:
+    name: "{{ item.item }}"
+    state: directory
+    mode: "0755"
+    recurse: true
+  when: not item.stat.exists
+  loop_control:
+    label: "{{ item.item }}"
+  with_items: "{{ _vhost_ssl_folder_stats.results }}"
+
+- name: Deploy SSL CA bundle
+  copy:
+    content: "{{ vhost.ssl_ca_bundle }}"
+    dest: "{{ vhost.ssl_ca_bundle_file }}"
+    owner: apache
+    group: apache
+    mode: "0644"
+  when: vhost.ssl_ca_bundle_file is defined
+
+- name: Deploy SSL cert
+  copy:
+    content: "{{ vhost.ssl_cert }}"
+    dest: "{{ vhost.ssl_cert_file }}"
+    owner: apache
+    group: apache
+    mode: "0644"
+
+- name: Deploy SSL key
+  copy:
+    content: "{{ vhost.ssl_key }}"
+    dest: "{{ vhost.ssl_key_file }}"
+    owner: apache
+    group: apache
+    mode: "0600"

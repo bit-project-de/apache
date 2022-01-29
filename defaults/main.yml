@@ -1,0 +1,73 @@
+---
+# defaults file for apache
+
+httpd_listen_ports:
+  - 80
+
+httpd_vhosts:
+  - servername: example.com
+    with_http2: false
+  - servername: example-2.com
+    with_http2: true
+#  -
+#    servername: advanced.example.com
+#    locations:
+#      - path: /httpd/balancer-manager
+#        options:
+#          - Require all denied
+#          - Require ip 127.0.0.1
+#          - SetHandler balancer-manager
+#      - path: /httpd/server-status
+#        options:
+#          - Require all denied
+#          - Require ip 127.0.0.1
+#          - SetHandler server-status
+#    proxy_pass_exception_rules:
+#      - /httpd/server-status
+#      - /httpd/balancer-manager
+#    proxy_groups:
+#      - name: my-app
+#        members:
+#          - http://instance1.app.example.net:8080 hcmethod=GET hcuri=/actuator/health hcinterval=10
+#          - http://instance2.app.example.net:8080 hcmethod=GET hcuri=/actuator/health hcinterval=10
+#        proxysets:
+#          - lbmethod=bytraffic
+#    proxy_pass_rules:
+#      - path: /
+#        group: my-app
+#    rewrite_rules:
+#      - rule: ^(.*)$ https://advanced.example.com$1 [R=301,L]
+#        conditions:
+#          - "%{HTTP_HOST} !^advanced.example.com$"
+#    options:
+#      - Header always unset "X-Powered-By"
+#      - Header unset "X-Powered-By"
+#    with_ssl: true
+#    with_ssl_termination: true
+#    ssl_key_file: /etc/pki/tls/private/advanced.example.com.key
+#    ssl_key: "{{ vault_wildcard_retoure_advanced_example_com_key }}"
+#    ssl_cert_file: /etc/pki/tls/certs/hostadapter.retoure.klingel.de.crt
+#    ssl_cert: |
+#      -----BEGIN CERTIFICATE-----
+#      [...]
+#      -----END CERTIFICATE-----
+#      -----BEGIN CERTIFICATE-----
+#      [...]
+#      -----END CERTIFICATE-----
+#      -----BEGIN CERTIFICATE-----
+#      [...]
+#      -----END CERTIFICATE-----
+
+httpd_vhosts_absent: []
+#  - servername: example.com
+
+httpd_ssl_protocol: all -SSLv3 -TLSv1 -TLSv1.1
+httpd_ssl_ciphers: ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384::ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384
+
+httpd_modules:
+  - name: lua
+    file: lua.load
+    state: absent
+  - name: ssl
+    file: ssl.load
+    state: present
