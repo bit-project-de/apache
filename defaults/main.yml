@@ -1,6 +1,8 @@
 ---
 # defaults file for apache
 
+httpd_package_state: present
+
 httpd_listen_ports:
   - 80
 

@@ -5,15 +5,14 @@
 - name: Install apache httpd  (state=present is optional)
   apt:
     name: apache2
-    state: present
+    state: "{{ httpd_package_state }}"
+    update_cache: true
+    cache_valid_time: 360
 
 - name: Disable default configuration
   file:
     name: "/etc/apache2/sites-enabled/000-default.conf"
     state: absent
-    owner: root
-    group: root
-    mode: 0644
   notify: Restart httpd
 
 - name: Get httpd modules status
@@ -42,7 +41,7 @@
     dest: /etc/apache2/ports.conf
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   notify: Restart httpd
 
 - name: Configure httpd
@@ -51,7 +50,7 @@
     dest: /etc/apache2/apache2.conf
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   notify: Restart httpd
 
 - name: Remove absent vhosts

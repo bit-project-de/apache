@@ -15,10 +15,10 @@
     dest: /etc/apache2/sites-available/{{ vhost.servername }}.conf
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   register: conf
 
-- name: Enable vhost for {{ vhost.servername }}
+- name: Enable vhost for {{ vhost.servername }}  # noqa 503
   command: "a2ensite {{ vhost.servername }}"
   notify: Restart httpd
   when: conf.changed
