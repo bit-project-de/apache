@@ -11,5 +11,5 @@
         name: "{{ item.name }}"
         state: absent
         force_stop: "{{ item.force_stop | default(true) }}"
-        url: "{{ item.url | default('unix:/var/snap/lxd/common/lxd/unix.socket') }}"
+        url: "{{ lookup('env', '_MOLECULE_LXD_URL') | bool or item.url | default('unix:/var/snap/lxd/common/lxd/unix.socket') }}"
       with_items: "{{ molecule_yml.platforms }}"
