@@ -1,4 +1,0 @@
----
-- name: ansible-bootstrap
-  src: git+https://git.delibooth.net/Ansible-Roles/ansible-bootstrap.git
-  version: 0.0.13

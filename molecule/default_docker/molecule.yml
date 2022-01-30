@@ -1,31 +1,28 @@
 ---
-
 dependency:
   name: galaxy
-  options:
-    role-file: molecule/requirements.yml
 driver:
-  name: lxd
-lint:
-  name: yamllint
+  name: docker
 platforms:
-  - name: apache-ubuntu-20-04-$TOX_ENVNAME
-    alias: ubuntu/focal/amd64
+  - name: ubuntu-focal-$TOX_ENVNAME
+    alias: ubuntu/20.04/amd64
     groups: [ "apache" ]
+    image: geerlingguy/docker-ubuntu2004-ansible
+    pre_build_image: true
 provisioner:
   name: ansible
   playbooks:
-    prepare: ../.playbooks/prepare.yml
-    create: ../.playbooks/create.yml
+    prepare: prepare.yml
+    # create: ../.playbooks/create.yml
     converge: ../.playbooks/playbook.yml
-    destroy: ../.playbooks/destroy.yml
+    # destroy: ../.playbooks/destroy.yml
   inventory:
     links:
       group_vars: ../.inventory/group_vars/
   lint:
     name: ansible-lint
 scenario:
-  name: default
+  name: default_docker
 verifier:
   name: testinfra
   directory: ../.tests/
