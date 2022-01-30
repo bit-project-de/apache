@@ -74,6 +74,12 @@ sudo apt install python3-pip curl
 sudo pip install virtualenv
 ```
 
+### Prepare Environment
+```sh
+virtualenv -p python3.8 .venv
+source .venv/bin/activate
+pip install -r test-requirements.txt
+```
 
 ### Run
 
