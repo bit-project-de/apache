@@ -16,26 +16,27 @@
     mode: 0644
   notify: Restart httpd
 
-# - name: Enable modules via symlinks
-#   file:
-#     src: "/etc/apache2/mods-available/{{ item.file }}"
-#     dest: "/etc/apache2/mods-enabled/{{ item.file }}"
-#     state: item.state
-#   with_items: "{{ httpd_modules }}"
-#   notify: Restart httpd
+- name: Get httpd modules status
+  command: apachectl -M
+  register: _httpd_modules_status
+  changed_when: false
 
-- name: Explicitly disable modules via apache2-script
-  with_items: "{{ httpd_modules }}"
-  command: "a2dismod {{ item.name }}"
-  when: item.state == 'absent'
+- name: Get installed modules
+  debug: msg="{{ _httpd_modules_status }}"
 
-- name: Explicitly enable modules via apache2-script
-  with_items: "{{ httpd_modules }}"
-  command: "a2enmod {{ item.name }}"
-  when: item.state == 'present'
+- name: Enable modules via apache2-script
+  with_items: "{{ httpd_mods }}"
+  command: "a2enmod {{ item }}"
+  when: 'item not in _httpd_modules_status.stdout'
   notify: Restart httpd
 
-- name: Configure httpd custom ports
+- name: Disable absent modules via apache2-script
+  with_items: "{{ httpd_mods_absent }}"
+  command: "a2dismod {{ item }}"
+  when: 'item in _httpd_modules_status.stdout'
+  notify: Restart httpd
+
+- name: Set httpd custom ports
   template:
     src: ports.conf
     dest: /etc/apache2/ports.conf

@@ -64,10 +64,8 @@ httpd_vhosts_absent: []
 httpd_ssl_protocol: all -SSLv3 -TLSv1 -TLSv1.1
 httpd_ssl_ciphers: ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384::ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384
 
-httpd_modules:
-  - name: lua
-    file: lua.load
-    state: absent
-  - name: ssl
-    file: ssl.load
-    state: present
+httpd_mods_absent:
+  - "lua"
+
+httpd_mods:
+  - "ssl"

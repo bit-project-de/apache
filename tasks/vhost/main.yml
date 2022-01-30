@@ -16,7 +16,9 @@
     owner: root
     group: root
     mode: 0644
+  register: conf
 
 - name: Enable vhost for {{ vhost.servername }}
   command: "a2ensite {{ vhost.servername }}"
   notify: Restart httpd
+  when: conf.changed
