@@ -1,0 +1,10 @@
+*.retry
+.venv
+.tox
+.ara
+reports
+molecule/**/__pycache__
+molecule/**/*.pyc
+molecule/**/*.log
+
+.idea
