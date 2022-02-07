@@ -15,26 +15,6 @@
     state: absent
   notify: Restart httpd
 
-- name: Get httpd modules status
-  command: apachectl -M
-  register: _httpd_modules_status
-  changed_when: false
-
-- name: Get installed modules
-  debug: msg="{{ _httpd_modules_status }}"
-
-- name: Enable modules via apache2-script
-  with_items: "{{ httpd_mods }}"
-  command: "a2enmod {{ item }}"
-  when: 'item not in _httpd_modules_status.stdout'
-  notify: Restart httpd
-
-- name: Disable absent modules via apache2-script
-  with_items: "{{ httpd_mods_absent }}"
-  command: "a2dismod {{ item }}"
-  when: 'item in _httpd_modules_status.stdout'
-  notify: Restart httpd
-
 - name: Set httpd custom ports
   template:
     src: ports.conf
@@ -52,6 +32,27 @@
     group: root
     mode: "0644"
   notify: Restart httpd
+
+- name: Install missing modules with aptitude (optional)
+  apt:
+    state: "{{ item.state }}"
+    name: "{{ item.apt_package }}"
+    update_cache: true
+    cache_valid_time: 360
+  with_items: "{{ httpd_modules }}"
+  when: 'item.apt_package is defined'
+
+- name: Configure apache2 modules
+  community.general.apache2_module:
+    state: "{{ item.state }}"
+    name: "{{ item.name }}"
+  with_items: "{{ httpd_modules }}"
+
+- name: Configure vhosts
+  include_tasks: vhost/main.yml
+  with_items: "{{ httpd_vhosts }}"
+  loop_control:
+    loop_var: vhost
 
 - name: Remove absent vhosts
   include_tasks: vhost/remove.yml

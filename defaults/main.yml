@@ -48,7 +48,7 @@ httpd_vhosts:
 #    with_ssl_termination: true
 #    ssl_key_file: /etc/pki/tls/private/advanced.example.com.key
 #    ssl_key: "{{ vault_wildcard_retoure_advanced_example_com_key }}"
-#    ssl_cert_file: /etc/pki/tls/certs/hostadapter.retoure.klingel.de.crt
+#    ssl_cert_file: /etc/pki/tls/certs/hostadapter.retou  re.klingel.de.crt
 #    ssl_cert: |
 #      -----BEGIN CERTIFICATE-----
 #      [...]
@@ -66,8 +66,14 @@ httpd_vhosts_absent: []
 httpd_ssl_protocol: all -SSLv3 -TLSv1 -TLSv1.1
 httpd_ssl_ciphers: ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384::ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384
 
-httpd_mods_absent:
-  - "lua"
-
-httpd_mods:
-  - "ssl"
+httpd_modules:
+  - name: lua
+    file: 00-lua.conf
+    state: absent
+  - name: ssl
+    file: ssl.conf
+    state: present
+  - name: security2
+    file: security2.conf
+    state: present
+    apt_package: libapache2-mod-security2
